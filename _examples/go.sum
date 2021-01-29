@@ -23,6 +23,12 @@ github.com/bradleypeabody/gorilla-sessions-memcache v0.0.0-20181103040241-659414
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/centrifugal/protocol v0.3.5 h1:3Tu1iNoKfEw5xkJotKm2or0vhyOl4HtfPbGSDnEWoGA=
 github.com/centrifugal/protocol v0.3.5/go.mod h1:2YbBCaDwQHl37ErRdMrKSj18X2yVvpkQYtSX6aVbe5A=
+github.com/centrifugal/protocol v0.3.6-0.20210128175104-67cde3450f19 h1:fS7Ou6YfArmeDNlcJYYqqsb9d71tEEiz91M7+LEd3B0=
+github.com/centrifugal/protocol v0.3.6-0.20210128175104-67cde3450f19/go.mod h1:2YbBCaDwQHl37ErRdMrKSj18X2yVvpkQYtSX6aVbe5A=
+github.com/centrifugal/protocol v0.3.6-0.20210128180621-657017318737 h1:TPPmMbvkoltorICd6me8xaQpBX2Abm1aVK+dnr8Dgv8=
+github.com/centrifugal/protocol v0.3.6-0.20210128180621-657017318737/go.mod h1:2YbBCaDwQHl37ErRdMrKSj18X2yVvpkQYtSX6aVbe5A=
+github.com/centrifugal/protocol v0.3.6-0.20210128192417-2201ac8a3ae0 h1:WJUdmmsarZu+veTFftG38haHo1akHIvWp9DVxv9689w=
+github.com/centrifugal/protocol v0.3.6-0.20210128192417-2201ac8a3ae0/go.mod h1:2YbBCaDwQHl37ErRdMrKSj18X2yVvpkQYtSX6aVbe5A=
 github.com/cespare/xxhash/v2 v2.1.1 h1:6MnRN8NT7+YBpUIWxHtefFZOKTAPgGjpQSxqLNn0+qY=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=

@@ -56,3 +56,11 @@ func NewSubPush(ch string, data protocol.Raw) *protocol.Push {
 		Data:    data,
 	}
 }
+
+// NewDisconnectPush returns initialized async disconnect message.
+func NewDisconnectPush(data protocol.Raw) *protocol.Push {
+	return &protocol.Push{
+		Type: protocol.PushTypeDisconnect,
+		Data: data,
+	}
+}

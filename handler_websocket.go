@@ -5,9 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/centrifugal/centrifuge/internal/cancelctx"
 	"github.com/centrifugal/centrifuge/internal/timers"
 
+	"github.com/centrifugal/centrifuge/internal/cancelctx"
+	"github.com/centrifugal/centrifuge/internal/clientproto"
+	"github.com/centrifugal/centrifuge/internal/prepared"
+	"github.com/centrifugal/protocol"
 	"github.com/gorilla/websocket"
 )
 
@@ -94,28 +97,32 @@ func (t *websocketTransport) Write(data []byte) error {
 	case <-t.closeCh:
 		return nil
 	default:
-		if t.opts.compressionMinSize > 0 {
-			t.conn.EnableWriteCompression(len(data) > t.opts.compressionMinSize)
-		}
-		if t.opts.writeTimeout > 0 {
-			_ = t.conn.SetWriteDeadline(time.Now().Add(t.opts.writeTimeout))
-		}
-
-		var messageType = websocket.TextMessage
-		if t.Protocol() == ProtocolTypeProtobuf {
-			messageType = websocket.BinaryMessage
-		}
-
-		err := t.conn.WriteMessage(messageType, data)
-		if err != nil {
-			return err
-		}
-
-		if t.opts.writeTimeout > 0 {
-			_ = t.conn.SetWriteDeadline(time.Time{})
-		}
-		return nil
+		return t.write(data)
 	}
+}
+
+func (t *websocketTransport) write(data []byte) error {
+	if t.opts.compressionMinSize > 0 {
+		t.conn.EnableWriteCompression(len(data) > t.opts.compressionMinSize)
+	}
+	if t.opts.writeTimeout > 0 {
+		_ = t.conn.SetWriteDeadline(time.Now().Add(t.opts.writeTimeout))
+	}
+
+	var messageType = websocket.TextMessage
+	if t.Protocol() == ProtocolTypeProtobuf {
+		messageType = websocket.BinaryMessage
+	}
+
+	err := t.conn.WriteMessage(messageType, data)
+	if err != nil {
+		return err
+	}
+
+	if t.opts.writeTimeout > 0 {
+		_ = t.conn.SetWriteDeadline(time.Time{})
+	}
+	return nil
 }
 
 const closeFrameWait = 5 * time.Second
@@ -135,11 +142,36 @@ func (t *websocketTransport) Close(disconnect *Disconnect) error {
 	t.mu.Unlock()
 
 	if disconnect != nil {
-		msg := websocket.FormatCloseMessage(int(disconnect.Code), disconnect.CloseText())
-		err := t.conn.WriteControl(websocket.CloseMessage, msg, time.Now().Add(time.Second))
-		if err != nil {
-			return t.conn.Close()
+		p := &protocol.Disconnect{
+			Code:      disconnect.Code,
+			Reason:    disconnect.Reason,
+			Reconnect: disconnect.Reconnect,
 		}
+
+		pushEncoder := protocol.GetPushEncoder(t.Protocol().toProto())
+		data, err := pushEncoder.EncodeDisconnect(p)
+		if err != nil {
+			return err
+		}
+		result, err := pushEncoder.Encode(clientproto.NewDisconnectPush(data))
+		if err != nil {
+			return err
+		}
+
+		reply := prepared.NewReply(&protocol.Reply{
+			Result: result,
+		}, t.Protocol().toProto())
+
+		err = t.write(reply.Data())
+		if err != nil {
+			println(err.Error())
+		}
+
+		//msg := websocket.FormatCloseMessage(int(disconnect.Code), disconnect.CloseText())
+		//err := t.conn.WriteControl(websocket.CloseMessage, msg, time.Now().Add(time.Second))
+		//if err != nil {
+		//	return t.conn.Close()
+		//}
 		select {
 		case <-t.graceCh:
 		default:
@@ -290,9 +322,9 @@ func (s *WebsocketHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	var protocol = ProtocolTypeJSON
+	var proto = ProtocolTypeJSON
 	if r.URL.Query().Get("format") == "protobuf" || r.URL.Query().Get("protocol") == "protobuf" {
-		protocol = ProtocolTypeProtobuf
+		proto = ProtocolTypeProtobuf
 	}
 
 	var enc = EncodingTypeJSON
@@ -307,7 +339,7 @@ func (s *WebsocketHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			writeTimeout:       writeTimeout,
 			compressionMinSize: compressionMinSize,
 			encType:            enc,
-			protoType:          protocol,
+			protoType:          proto,
 		}
 
 		graceCh := make(chan struct{})
